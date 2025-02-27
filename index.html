@@ -2,25 +2,26 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/poc-pdv-pwa/vite.svg" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React</title>
+    <title>PWA Vite SQLite</title>
 
     <!-- Link para o manifest.json -->
-    <link rel="manifest" href="/poc-pdv-pwa/assets/manifest.json">
-    <script type="module" crossorigin src="/poc-pdv-pwa/assets/index.js"></script>
-  <link rel="manifest" href="/poc-pdv-pwa/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/poc-pdv-pwa/registerSW.js"></script></head>
+    <link rel="manifest" href="/assets/manifest.json">
+    <script type="module" crossorigin src="/assets/index.js"></script>
+  <link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
   <body>
     <div id="root"></div>
 
+    <!-- Referência ao arquivo JavaScript principal gerado pelo Vite -->
 
     <!-- Registro do Service Worker -->
     <script>
-      if ("serviceWorker" in navigator) {
-        window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./service-worker.js")
-            .then(() => console.log("Service Worker registrado com sucesso!"))
-            .catch(error => console.log("Erro ao registrar Service Worker:", error));
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(() => console.log('Service Worker registrado com sucesso!'))
+            .catch((error) => console.log('Erro ao registrar Service Worker:', error));
         });
       }
     </script>
