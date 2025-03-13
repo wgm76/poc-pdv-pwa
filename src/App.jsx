@@ -7,12 +7,64 @@ const App = () => {
   const [weight, setWeight] = useState("---");
   const [selectedPrinterPort, setSelectedPrinterPort] = useState("");
   const [selectedScalePort, setSelectedScalePort] = useState("");
+  const [newVersionAvailable, setNewVersionAvailable] = useState(false);
+  const [newVersion, setNewVersion] = useState("");
 
   useEffect(() => {
+    // Registrando o Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+        console.log("Service Worker registrado com sucesso!");
+  
+        // Espera o Service Worker ser ativado e pronto
+        navigator.serviceWorker.ready.then(() => {
+          // Aqui garantimos que o Service Worker está pronto
+          if (navigator.serviceWorker.controller) {
+            console.log("Service Worker agora controla esta página.");
+          } else {
+            console.log("Service Worker ainda não está controlando a página.");
+          }
+        });
+      }).catch((error) => {
+        console.error("Erro ao registrar o Service Worker:", error);
+      });
+    }
+
+    // Registrar listener de nova versão
+    if ('serviceWorker' in navigator) {
+      console.log("Registrando listener para o Service Worker...");
+      navigator.serviceWorker.addEventListener("message", (event) => {
+        // Se o evento for uma nova versão, exibe a notificação
+        if (event.data && event.data.type === "new-version") {
+          console.log("Nova versão detectada:", event.data.version); // Log para debug
+          setNewVersion(event.data.version);
+          setNewVersionAvailable(true);
+        }
+
+        // Verifica se a nova versão foi ativada
+        if (event.data && event.data.type === "new-version-activated") {
+          console.log("A nova versão foi ativada!");
+          setNewVersionAvailable(false); // Pode querer atualizar ou mostrar uma mensagem
+        }
+      });
+    }
+
+    // Carregar diretórios se necessário
     loadDirectory();
   }, []);
+  
 
-  // Conectar à impressora via Serial
+  // Função para forçar a atualização do Service Worker
+  const updateServiceWorker = () => {
+    if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+      // Envia mensagem para o Service Worker para "pular a espera" (skipWaiting)
+      navigator.serviceWorker.controller.postMessage({ type: "skip-waiting" });
+
+      // Atualiza a página para carregar a nova versão
+      window.location.reload();
+    }
+  };
+
   const connectToPrinter = async () => {
     if (!selectedPrinterPort) {
       alert("Selecione uma porta serial para a impressora.");
@@ -36,22 +88,17 @@ const App = () => {
     }
   };
 
-  // Enviar comando para leitura X
   const emitirLeituraX = async () => {
     if (!printerPort) {
       alert("Nenhuma impressora conectada.");
       return;
     }
-  
+
     try {
       const writer = printerPort.writable.getWriter();
       const reader = printerPort.readable.getReader();
-  
-      // 1️⃣ Enviar comando principal
       const comandoLeituraX = new Uint8Array([0x01, 0x00, 0x14, 0x00, 0x02, 0x00, 0x30, 0x7C, 0xC2]);
       await writer.write(comandoLeituraX);
-  
-      // 2️⃣ Ler ACK (06)
       let { value } = await reader.read();
       if (value[0] !== 0x06) {
         alert("Impressora não reconheceu o comando.");
@@ -59,33 +106,21 @@ const App = () => {
         reader.releaseLock();
         return;
       }
-  
-      // 3️⃣ Enviar solicitação de status
       await writer.write(new Uint8Array([0x05, 0x00]));
-  
-      // 4️⃣ Ler status
       ({ value } = await reader.read());
       console.log("Status recebido:", value);
-  
-      // 5️⃣ Enviar confirmação final
       await writer.write(new Uint8Array([0x05, 0x00]));
-  
-      // 6️⃣ Ler resposta final
       ({ value } = await reader.read());
       console.log("Resposta final:", value);
-  
       writer.releaseLock();
       reader.releaseLock();
-  
       alert("Leitura X enviada com sucesso!");
     } catch (error) {
       console.error("Erro ao emitir Leitura X:", error);
       alert("Falha ao emitir Leitura X.");
     }
   };
-  
 
-  // Conectar à balança via porta serial
   const connectToScale = async () => {
     if (!selectedScalePort) {
       alert("Selecione uma porta serial para a balança.");
@@ -103,7 +138,6 @@ const App = () => {
     }
   };
 
-  // Ler peso da balança
   const readWeight = async () => {
     if (!scalePort) {
       alert("Nenhuma balança conectada.");
@@ -139,6 +173,14 @@ const App = () => {
         Salvar Arquivo
       </button>
       <hr />
+
+      {/* Exibindo a notificação de nova versão */}
+      {newVersionAvailable && (
+        <div style={{ background: "yellow", padding: "10px", marginBottom: "10px" }}>
+          <p>Uma nova versão ({newVersion}) está disponível!</p>
+          <button onClick={updateServiceWorker}>Atualizar Agora</button>
+        </div>
+      )}
 
       <h2>Impressora Térmica (Serial)</h2>
       <label>Selecionar Porta Impressora:</label>

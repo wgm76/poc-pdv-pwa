@@ -17,16 +17,24 @@ export default defineConfig({
         theme_color: '#000000',
         icons: [
           {
-            src: '/icons/icon-192x192.png',
+            src: '/icon-192x192.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: '/icons/icon-512x512.png',
+            src: '/icon-512x512.png',
             sizes: '512x512',
             type: 'image/png',
           },
         ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{html,js,css,png,jpg,jpeg,gif,svg}'],
+        swDest: 'service-worker.js',
+      },
+      devOptions: {
+        enabled: true, // Habilita o Service Worker no ambiente de desenvolvimento
+        type: 'module', // Usa o tipo de módulo para o Service Worker
       },
     }),
   ],
